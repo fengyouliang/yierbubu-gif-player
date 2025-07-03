@@ -19,6 +19,11 @@ jobs:
       - name: Install dependencies
         run: pip install pyinstaller PyQt5
 
+      - name: Clean old build files
+        run: |
+          if exist dist_build rmdir /s /q dist_build
+          if exist 一二布布.spec del 一二布布.spec
+
       - name: Build exe
         run: |
           pyinstaller --clean --noconsole --onefile --name "一二布布" --distpath dist_build --workpath dist_build/build --specpath dist_build --exclude-module test --exclude-module tkinter --add-data "icon/output.png;icon" transparent_gif_player.py
