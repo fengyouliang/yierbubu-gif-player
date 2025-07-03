@@ -55,6 +55,10 @@ pyinstaller --clean --noconsole --onefile --name "一二布布" --distpath dist_
    - "选择GIF文件夹..." 切换播放其他文件夹
    - "自动切换"、"切换间隔"、"窗口置顶"等功能
    - "关闭" 退出程序
+4. 快捷键
+   - Ctrl +  (+/-) 放大和缩小
+   - Ctrl + 0 恢复默认大小
+   - Ctrl + (方向键 左右) 切换上一张和下一张
 
 ## 四、常见问题
 
