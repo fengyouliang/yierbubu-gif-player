@@ -20,13 +20,14 @@ jobs:
         run: pip install pyinstaller PyQt5
 
       - name: Clean old build files
+        working-directory: ${{ github.workspace }}
         run: |
           if (Test-Path dist_build) { Remove-Item -Recurse -Force dist_build }
           if (Test-Path 一二布布.spec) { Remove-Item -Force 一二布布.spec }
 
       - name: Build exe
+        working-directory: ${{ github.workspace }}
         run: |
-          cd ${{ github.workspace }}
           pyinstaller --clean --noconsole --onefile --name "一二布布" --distpath dist_build --workpath dist_build/build --specpath dist_build --exclude-module test --exclude-module tkinter --add-data "icon/output.png;icon" transparent_gif_player.py
 
       - name: Upload Release Asset
