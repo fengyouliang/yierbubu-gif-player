@@ -1,0 +1,22 @@
+# Python 缓存和临时文件
+__pycache__/
+*.pyc
+*.pyo
+
+# PyInstaller 打包输出目录
+/dist_build/
+
+# 用户本地配置
+./user_config.json
+
+# Qt资源自动生成文件
+icon_rc.py
+
+# IDE/编辑器临时文件
+*.vscode/
+*.idea/
+.DS_Store
+Thumbs.db
+
+# PyInstaller spec 文件
+*.spec
