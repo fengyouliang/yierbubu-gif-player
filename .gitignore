@@ -5,6 +5,7 @@ __pycache__/
 
 # PyInstaller 打包输出目录
 /dist_build/
+/dist/
 
 # 用户本地配置
 ./user_config.json
