@@ -13,11 +13,30 @@
 
 
 
+
 在 `transparent_gif_player.py` 所在目录下打开命令行，**每次打包前建议加 --clean 参数，避免旧的 .spec 文件或缓存导致路径错误**：
 
 ```powershell
 pyinstaller --clean --noconsole --onefile --name "一二布布" --distpath dist_build --workpath dist_build/build --specpath dist_build --exclude-module test --exclude-module tkinter transparent_gif_player.py
 ```
+
+### GitHub Actions 自动发布 Release
+
+如需用 GitHub Actions 自动打包并发布 release，需在推送 tag 时触发 workflow。操作如下：
+
+1. 修改/确认 `.github/workflows/release.yml` 的 `on` 部分如下：
+   ```yaml
+   on:
+     push:
+       tags:
+         - 'v*'  # 只有推送 tag 时才触发
+   ```
+2. 打 tag 并推送（如 v1.0.1）：
+   ```powershell
+   git tag v1.0.1
+   git push origin v1.0.1
+   ```
+3. Actions 会自动打包并上传 exe 到 Release 页面。
 
 - `--noconsole`：不弹出命令行窗口（适合 GUI 程序）
 - `--onefile`：生成单一 exe 文件，便于分发
