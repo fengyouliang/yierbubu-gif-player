@@ -28,8 +28,7 @@ jobs:
       - name: Build exe
         working-directory: ${{ github.workspace }}
         run: |
-          pyinstaller --clean --noconsole --onefile --name "一二布布" --distpath dist_build --workpath dist_build/build --specpath dist_build --exclude-module test --exclude-module tkinter --add-data "icon/output.png;icon" transparent_gif_player.py
-
+          pyinstaller --clean --noconsole --onefile --name "一二布布" --distpath dist_build --workpath dist_build/build --exclude-module test --exclude-module tkinter --add-data "icon/output.png;icon" transparent_gif_player.py
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
