@@ -4,8 +4,6 @@ import json
 from PyQt5.QtWidgets import QApplication, QLabel, QMenu, QAction, QFileDialog, QSystemTrayIcon, QStyle, QMessageBox
 from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QMovie, QPainter, QIcon
-# 导入资源模块，实现资源内嵌
-import icon_rc
 
 class TransparentGifPlayer(QLabel):
     def __init__(self, gif_folder, config_path=None):
