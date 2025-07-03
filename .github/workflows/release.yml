@@ -21,8 +21,8 @@ jobs:
 
       - name: Clean old build files
         run: |
-          if exist dist_build rmdir /s /q dist_build
-          if exist 一二布布.spec del 一二布布.spec
+          if (Test-Path dist_build) { Remove-Item -Recurse -Force dist_build }
+          if (Test-Path 一二布布.spec) { Remove-Item -Force 一二布布.spec }
 
       - name: Build exe
         run: |
