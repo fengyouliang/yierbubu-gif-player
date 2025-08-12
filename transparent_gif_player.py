@@ -126,6 +126,8 @@ class TransparentGifPlayer(QLabel):
         self.gif_list = []
         self._config_path = config_path
         self._user_gif_folder = None
+        self._flipped = False  # 左右翻转状态
+        self._single_file_mode = False  # 单文件模式标志
         
         # 读取用户配置
         self._always_on_top = True # 默认置顶
@@ -140,6 +142,8 @@ class TransparentGifPlayer(QLabel):
                 self._always_on_top = cfg.get('always_on_top', True)
                 self._auto_switch = cfg.get('auto_switch', True)
                 self._interval = cfg.get('interval', 60_000)
+                self._flipped = cfg.get('flipped', False)
+                self._single_file_mode = cfg.get('single_file_mode', False)
             except Exception as e:
                 print(f"读取配置文件失败: {e}")
                 pass # 忽略错误，使用默认配置
@@ -189,6 +193,8 @@ class TransparentGifPlayer(QLabel):
         config['always_on_top'] = self._always_on_top # 直接使用内部状态
         config['auto_switch'] = self._auto_switch
         config['interval'] = self._interval
+        config['flipped'] = self._flipped
+        config['single_file_mode'] = self._single_file_mode
         
         if self._config_path:
             try:
@@ -260,6 +266,8 @@ class TransparentGifPlayer(QLabel):
             self.gif_index = 0
             
             if self.gif_list:
+                # 重置为文件夹模式
+                self._single_file_mode = False
                 self.set_gif(self.gif_list[self.gif_index])
                 # 保存用户选择
                 if save_config:
@@ -289,6 +297,24 @@ class TransparentGifPlayer(QLabel):
                     self.close()
                     return
 
+    def set_single_gif_file(self, gif_path, save_config=True):
+        """设置单个GIF文件并进入单文件模式"""
+        if not os.path.isfile(gif_path) or not gif_path.lower().endswith('.gif'):
+            QMessageBox.warning(self, "无效文件", "请选择一个有效的GIF文件。")
+            return
+        
+        # 设置单文件模式
+        self._single_file_mode = True
+        self.gif_list = [gif_path]
+        self.gif_index = 0
+        self.set_gif(gif_path)
+        
+        # 保存配置
+        if save_config:
+            # 保存文件所在目录作为用户文件夹
+            self._user_gif_folder = os.path.dirname(gif_path)
+            self._save_config()
+
     def set_gif(self, gif_path):
         """设置并播放GIF"""
         if self.movie:
@@ -307,6 +333,14 @@ class TransparentGifPlayer(QLabel):
         if frame.isNull():
             super().paintEvent(event)
             return
+        
+        # 如果需要左右翻转，应用水平翻转变换
+        if self._flipped:
+            from PyQt5.QtGui import QTransform
+            transform = QTransform()
+            transform.scale(-1, 1)  # 水平翻转
+            frame = frame.transformed(transform)
+        
         painter = QPainter(self)
         # 计算缩放比例，保持原比例，居中
         widget_w, widget_h = self.width(), self.height()
@@ -383,12 +417,7 @@ class TransparentGifPlayer(QLabel):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        """鼠标释放事件，用于结束拖动和调整大小，并处理点击切换GIF"""
-        if self._dragging and not self._moved and not self._resize_dir:
-            # 无论自动切换是否开启，左键点击都切换下一个并重置计时
-            self.next_gif()
-            if self._auto_switch:
-                self._timer.start(self._interval)
+        """鼠标释放事件，用于结束拖动和调整大小"""
         self._resizing = False
         self._resize_dir = None
         self._dragging = False
@@ -396,9 +425,22 @@ class TransparentGifPlayer(QLabel):
         self._moved = False
         super().mouseReleaseEvent(event)
 
+    def mouseDoubleClickEvent(self, event):
+        """鼠标双击事件，用于切换GIF"""
+        if event.button() == Qt.LeftButton:
+            # 无论自动切换是否开启，左键双击都切换下一个并重置计时
+            self.next_gif()
+            if self._auto_switch:
+                self._timer.start(self._interval)
+        super().mouseDoubleClickEvent(event)
+
     def next_gif(self):
         """切换到下一个GIF"""
         if not self.gif_list:
+            return
+        # 在单文件模式下，不切换文件，只是重新开始播放当前文件
+        if self._single_file_mode:
+            self.set_gif(self.gif_list[0])  # 重新播放当前文件
             return
         self.gif_index = (self.gif_index + 1) % len(self.gif_list)
         self.set_gif(self.gif_list[self.gif_index])
@@ -406,6 +448,10 @@ class TransparentGifPlayer(QLabel):
     def prev_gif(self):
         """切换到上一个GIF"""
         if not self.gif_list:
+            return
+        # 在单文件模式下，不切换文件，只是重新开始播放当前文件
+        if self._single_file_mode:
+            self.set_gif(self.gif_list[0])  # 重新播放当前文件
             return
         self.gif_index = (self.gif_index - 1 + len(self.gif_list)) % len(self.gif_list) # 确保负数也能正确循环
         self.set_gif(self.gif_list[self.gif_index])
@@ -480,6 +526,16 @@ class TransparentGifPlayer(QLabel):
                 interval_menu.addAction(act)
             menu.addMenu(interval_menu)
 
+        # 左右翻转选项
+        flip_action = QAction('左右翻转', self, checkable=True)
+        flip_action.setChecked(self._flipped)
+        def toggle_flip():
+            self._flipped = not self._flipped
+            self._save_config()
+            self.update()  # 触发重绘
+        flip_action.triggered.connect(toggle_flip)
+        menu.addAction(flip_action)
+
         # 新增：选择文件夹
         select_folder_action = QAction('选择GIF文件夹...', self)
         def select_folder():
@@ -489,6 +545,16 @@ class TransparentGifPlayer(QLabel):
                 self.set_gif_folder(folder, save_config=True)
         select_folder_action.triggered.connect(select_folder)
         menu.addAction(select_folder_action)
+
+        # 新增：选择单个GIF文件
+        select_file_action = QAction('选择单个GIF文件...', self)
+        def select_file():
+            base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+            file_path, _ = QFileDialog.getOpenFileName(self, '选择GIF文件', self._user_gif_folder or base_dir, 'GIF Files (*.gif)')
+            if file_path:
+                self.set_single_gif_file(file_path, save_config=True)
+        select_file_action.triggered.connect(select_file)
+        menu.addAction(select_file_action)
 
         close_action = QAction('关闭', self)
         close_action.triggered.connect(QApplication.instance().quit)
@@ -521,6 +587,11 @@ class TransparentGifPlayer(QLabel):
                 self.prev_gif()
                 if self._auto_switch:
                     self._timer.start(self._interval) # 重置计时器
+            elif event.key() == Qt.Key_F:
+                # Ctrl+F 切换左右翻转
+                self._flipped = not self._flipped
+                self._save_config()
+                self.update()  # 触发重绘
         super().keyPressEvent(event)
 
     def scale_player(self, factor):
